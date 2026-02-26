@@ -422,7 +422,7 @@ show_help() {
     cat << EOF
 ${BLUE}Eclipse Formatter CLI Uninstaller${NC}
 ${GREEN}Version: 0.1${NC}
-${YELLOW}GitHub: https://github.com/algodesigner/eclipse-format-cli${NC}
+${YELLOW}GitHub: https://github.com/algodesigner/eclipse-format${NC}
 
 Usage:
   ./uninstall.sh [options]

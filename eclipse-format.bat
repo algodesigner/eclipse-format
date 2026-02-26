@@ -180,7 +180,7 @@ exit /b 0
 
 :version
 echo Eclipse Formatter CLI Wrapper v%VERSION%
-echo Project: https://github.com/algodesigner/eclipse-format-cli
+echo Project: https://github.com/algodesigner/eclipse-format
 pause
 exit /b 0
 

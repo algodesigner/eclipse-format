@@ -84,7 +84,7 @@ EOF
 
 print_version() {
     echo "Eclipse Formatter CLI Wrapper v$VERSION"
-    echo "Project: https://github.com/algodesigner/eclipse-format-cli"
+    echo "Project: https://github.com/algodesigner/eclipse-format"
 }
 
 find_jar_files() {

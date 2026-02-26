@@ -18,8 +18,8 @@ A command-line tool for formatting Java code using Eclipse's code formatter in h
 ### Option 1: One-Command Setup (Easiest & Recommended)
 ```bash
 # Clone and setup in one go
-git clone https://github.com/algodesigner/eclipse-format-cli.git
-cd eclipse-format-cli
+git clone https://github.com/algodesigner/eclipse-format.git
+cd eclipse-format
 ./setup.sh
 
 # Now use it!
@@ -28,8 +28,8 @@ cd eclipse-format-cli
 
 ### Option 2: Interactive Installer (Full Features)
 ```bash
-git clone https://github.com/algodesigner/eclipse-format-cli.git
-cd eclipse-format-cli
+git clone https://github.com/algodesigner/eclipse-format.git
+cd eclipse-format
 ./install.sh
 
 # Choose from:
@@ -41,24 +41,24 @@ cd eclipse-format-cli
 
 ### Option 3: Universal Wrapper (Smart Auto-Detection)
 ```bash
-git clone https://github.com/algodesigner/eclipse-format-cli.git
-cd eclipse-format-cli
+git clone https://github.com/algodesigner/eclipse-format.git
+cd eclipse-format
 ./gradlew shadowJar
 ./eclipse-format.sh --help  # Auto-finds the JAR!
 ```
 
 ### Option 4: Direct Usage (Simple)
 ```bash
-git clone https://github.com/algodesigner/eclipse-format-cli.git
-cd eclipse-format-cli
+git clone https://github.com/algodesigner/eclipse-format.git
+cd eclipse-format
 ./gradlew shadowJar
 java -jar build/libs/eclipse-format.jar --help
 ```
 
 ### Option 5: Windows Users
 ```batch
-git clone https://github.com/yourusername/eclipse-format-cli.git
-cd eclipse-format-cli
+git clone https://github.com/algodesigner/eclipse-format.git
+cd eclipse-format
 gradlew.bat shadowJar
 eclipse-format.bat --help
 ```
@@ -132,8 +132,8 @@ Example configuration file structure:
 
 ```bash
 # Clone and setup
-git clone https://github.com/yourusername/eclipse-format-cli.git
-cd eclipse-format-cli
+git clone https://github.com/algodesigner/eclipse-format.git
+cd eclipse-format
 
 # Setup for Eclipse
 ./gradlew setupEclipse
@@ -167,13 +167,13 @@ cd eclipse-format-cli
 ### Project Structure
 
 ```
-eclipse-format-cli/
+eclipse-format/
 ├── src/
-│   ├── main/java/com/eclipseformatter/cli/
-│   │   ├── EclipseFormatterCli.jav a    # Main CLI entry point
+│   ├── main/java/com/algodesigner/eclipseformat/cli/
+│   │   ├── EclipseFormatCli.java        # Main CLI entry point
 │   │   └── FormatterService.java        # Core formatting logic
-│   └── test/java/com/eclipseformatter/cli/
-│       ├── EclipseFormatterCliTest.java # Unit tests
+│   └── test/java/com/algodesigner/eclipseformat/cli/
+│       ├── EclipseFormatCliTest.java    # Unit tests
 │       └── IntegrationTest.java         # Integration tests
 ├── eclipse-format.xml                   # Default formatter config
 ├── build.gradle                         # Gradle build configuration

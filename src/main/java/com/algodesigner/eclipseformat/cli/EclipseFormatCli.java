@@ -30,7 +30,7 @@ import picocli.CommandLine.Parameters;
  * @version 0.1
  * @since 0.1
  * @see FormatterService
- * @see <a href="https://github.com/algodesigner/eclipse-format-cli">Project
+ * @see <a href="https://github.com/algodesigner/eclipse-format">Project
  *      Repository</a>
  */
 @Command(name = "eclipse-format", description = "Eclipse Code Formatter CLI Tool", mixinStandardHelpOptions = true, version = "0.1", subcommands = {
