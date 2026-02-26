@@ -1,0 +1,177 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'eclipse'
+    id 'idea'
+}
+
+group = 'com.algodesigner.eclipseformat'
+version = '0.1'
+    sourceCompatibility = '15'
+    targetCompatibility = '15'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://repo.eclipse.org/content/repositories/eclipse-releases/'
+    }
+    maven {
+        url 'https://repo.eclipse.org/content/groups/releases/'
+    }
+}
+
+dependencies {
+    implementation 'info.picocli:picocli:4.7.5'
+    annotationProcessor 'info.picocli:picocli-codegen:4.7.5'
+    
+    // Eclipse JDT Core - includes the formatter
+    implementation 'org.eclipse.jdt:org.eclipse.jdt.core:3.40.0'
+    
+    // Explicitly add eclipse.text to help IDEs resolve dependencies
+    implementation 'org.eclipse.platform:org.eclipse.text:3.14.200'
+    
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation 'org.mockito:mockito-core:5.7.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
+}
+
+application {
+    mainClass = 'com.algodesigner.eclipseformat.cli.EclipseFormatCli'
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'com.algodesigner.eclipseformat.cli.EclipseFormatCli'
+        )
+    }
+}
+
+shadowJar {
+    archiveBaseName = 'eclipse-format'
+    archiveClassifier = ''
+    archiveVersion = ''
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileJava {
+    options.compilerArgs += ["-Aproject=${project.group}/eclipseformat"]
+}
+
+eclipse {
+    classpath {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+    
+    jdt {
+        // Set UTF-8 encoding for source files
+        file {
+            withProperties { properties ->
+                properties.put('encoding/<project>', 'UTF-8')
+            }
+        }
+    }
+    
+    // Create project-specific settings
+    project {
+        // This ensures the .settings directory is created with proper files
+        file {
+            // Create org.eclipse.core.resources.prefs with UTF-8 encoding
+            withXml { xmlProvider ->
+                // This is a workaround to ensure the .settings directory exists
+                // The actual file creation happens through the eclipse task
+            }
+        }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+tasks.register('setupEclipse') {
+    group = 'IDE'
+    description = 'Setup Eclipse project files'
+    dependsOn 'eclipse'
+    doLast {
+        println 'Eclipse project files generated. Import project using File → Import → Existing Gradle Project'
+    }
+}
+
+tasks.register('setupIntelliJ') {
+    group = 'IDE'
+    description = 'Setup IntelliJ IDEA project files'
+    dependsOn 'idea'
+    doLast {
+        println 'IntelliJ IDEA project files generated. Open project using File → Open'
+    }
+}
+
+tasks.register('cleanIDE') {
+    group = 'IDE'
+    description = 'Clean IDE project files'
+    doLast {
+        delete '.idea'
+        delete '.classpath'
+        delete '.project'
+        delete '.settings'
+        println 'Cleaned IDE project files'
+    }
+}
+
+// Task to format the project's own source code using the built formatter
+task formatSource(type: JavaExec) {
+    group = 'Formatting'
+    description = 'Format the project\'s own source code using the Eclipse formatter'
+    dependsOn shadowJar
+    
+    classpath = files("build/libs/eclipse-format.jar")
+    mainClass = 'com.algodesigner.eclipseformat.cli.EclipseFormatCli'
+    args = ['-r', 'src/', '--config', 'eclipse-format.xml']
+    
+    doFirst {
+        println 'Formatting project source code...'
+    }
+    
+    doLast {
+        println 'Project source code formatting complete'
+    }
+}
+
+// Task to check formatting without making changes (dry run)
+task checkFormat(type: JavaExec) {
+    group = 'Formatting'
+    description = 'Check if project source code needs formatting (dry run)'
+    dependsOn shadowJar
+    
+    classpath = files("build/libs/eclipse-format.jar")
+    mainClass = 'com.algodesigner.eclipseformat.cli.EclipseFormatCli'
+    args = ['-r', 'src/', '--config', 'eclipse-format.xml', '--dry-run']
+    
+    doFirst {
+        println 'Checking project source code formatting...'
+    }
+    
+    doLast {
+        println 'Format check complete - files that would be formatted are listed above'
+    }
+}
+
+// Make the build task depend on format check to ensure code is properly formatted
+tasks.named('build') {
+    dependsOn checkFormat
+}
+
+// Make the test task also depend on format check
+tasks.named('test') {
+    dependsOn checkFormat
+}
