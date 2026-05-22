@@ -196,10 +196,9 @@ eclipse-format -d -r src/
 eclipse-format -c my-config.xml MyClass.java
 ```
 
-> **Note:** If `-c` is omitted, the tool looks for `eclipse-format.xml` in
-> the current working directory. It does not walk up the directory tree or
-> search project roots — run the command from the directory containing the
-> config file or use `-c` to point to one elsewhere.
+> **Note:** When `-c` is omitted, the tool searches for `eclipse-format.xml`
+> starting from the target file or directory and walking up the tree. No
+> config is needed if you keep `eclipse-format.xml` in your project root.
 
 ### 5. CI/CD Integration
 ```bash

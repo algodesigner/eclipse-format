@@ -136,7 +136,7 @@ task formatSource(type: JavaExec) {
     
     classpath = files("build/libs/eclipse-format.jar")
     mainClass = 'com.algodesigner.eclipseformat.cli.EclipseFormatCli'
-    args = ['-r', 'src/', '--config', 'eclipse-format.xml']
+    args = ['-r', 'src/']
     
     doFirst {
         println 'Formatting project source code...'
@@ -155,7 +155,7 @@ task checkFormat(type: JavaExec) {
     
     classpath = files("build/libs/eclipse-format.jar")
     mainClass = 'com.algodesigner.eclipseformat.cli.EclipseFormatCli'
-    args = ['-r', 'src/', '--config', 'eclipse-format.xml', '--dry-run']
+    args = ['-r', 'src/', '--dry-run']
     
     doFirst {
         println 'Checking project source code formatting...'

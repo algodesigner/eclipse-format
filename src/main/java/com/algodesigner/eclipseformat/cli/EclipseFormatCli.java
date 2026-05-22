@@ -42,11 +42,11 @@ public class EclipseFormatCli implements Callable<Integer> {
    *
    * <p>
    * The configuration file should be in Eclipse XML format containing formatter
-   * settings. If not specified, defaults to "eclipse-format.xml" in the current
-   * directory.
+   * settings. If not specified, the tool searches for {@code eclipse-format.xml}
+   * starting from the target's parent directory and walking up the tree.
    */
   @Option(names = { "-c",
-    "--config" }, description = "Path to Eclipse formatter configuration file (default: eclipse-format.xml in current directory)", defaultValue = "eclipse-format.xml")
+    "--config" }, description = "Path to Eclipse formatter configuration file. If not specified, searches for eclipse-format.xml starting from the target's parent directory and walking up.")
   private File configFile;
 
   /**
@@ -97,7 +97,7 @@ public class EclipseFormatCli implements Callable<Integer> {
    * <p>
    * * This method orchestrates the formatting process by:
    * <ol>
-   * <li>Validating the configuration file exists</li>
+   * <li>Resolving the configuration file</li>
    * <li>Creating a {@link FormatterService} instance with the
    * configuration</li>
    * <li>Processing the target file or directory</li>
@@ -111,29 +111,33 @@ public class EclipseFormatCli implements Callable<Integer> {
   @Override
   public Integer call() throws Exception {
     try {
-      if (verbose) {
-        System.out.println("Eclipse Formatter CLI v0.1");
-        System.out.println("Target: " + target.getAbsolutePath());
-        System.out.println("Config: " + configFile.getAbsolutePath());
-        System.out.println("Dry run: " + dryRun);
-        System.out.println("Recursive: " + recursive);
-      }
-
       if (!target.exists()) {
         System.err
           .println("Error: Target does not exist: " + target.getAbsolutePath());
         return 1;
       }
 
-      if (!configFile.exists()) {
+      File resolvedConfig = resolveConfigFile(target);
+
+      if (resolvedConfig == null) {
         System.err.println(
-          "Error: Config file not found: " + configFile.getAbsolutePath());
+          "Error: Config file (eclipse-format.xml) not found");
+        System.err.println("Searched:");
+        printSearchPath(target);
         System.err.println(
-          "Please create an Eclipse formatter configuration file or specify one with -c");
+          "Create an eclipse-format.xml or specify one with -c");
         return 1;
       }
 
-      FormatterService formatter = new FormatterService(configFile, verbose);
+      if (verbose) {
+        System.out.println("Eclipse Formatter CLI v0.1");
+        System.out.println("Target: " + target.getAbsolutePath());
+        System.out.println("Config: " + resolvedConfig.getAbsolutePath());
+        System.out.println("Dry run: " + dryRun);
+        System.out.println("Recursive: " + recursive);
+      }
+
+      FormatterService formatter = new FormatterService(resolvedConfig, verbose);
 
       if (target.isFile()) {
         return formatFile(formatter, target);
@@ -147,6 +151,67 @@ public class EclipseFormatCli implements Callable<Integer> {
         e.printStackTrace();
       }
       return 1;
+    }
+  }
+
+  /**
+   * Resolves the Eclipse formatter configuration file.
+   * <p>
+   * If {@code -c} was specified, uses that path directly. Otherwise, searches
+   * for {@code eclipse-format.xml} by walking up from the target's parent
+   * directory.
+   *
+   * @param target the file or directory to format
+   * @return the resolved config file, or null if not found
+   */
+  private File resolveConfigFile(File target) {
+    if (configFile != null) {
+      return configFile;
+    }
+
+    File searchDir;
+    if (target.isFile()) {
+      searchDir = target.getAbsoluteFile().getParentFile();
+    } else if (target.isDirectory()) {
+      searchDir = target.getAbsoluteFile();
+    } else {
+      searchDir = new File(".").getAbsoluteFile();
+    }
+
+    File dir = searchDir;
+    while (dir != null) {
+      File candidate = new File(dir, "eclipse-format.xml");
+      if (candidate.exists()) {
+        if (verbose) {
+          System.out.println("Found config: " + candidate.getAbsolutePath());
+        }
+        return candidate;
+      }
+      dir = dir.getParentFile();
+    }
+    return null;
+  }
+
+  /**
+   * Prints each directory searched for the config file, used in error
+   * messages.
+   *
+   * @param target the file or directory that was being formatted
+   */
+  private void printSearchPath(File target) {
+    File searchDir;
+    if (target.isFile()) {
+      searchDir = target.getAbsoluteFile().getParentFile();
+    } else if (target.isDirectory()) {
+      searchDir = target.getAbsoluteFile();
+    } else {
+      searchDir = new File(".").getAbsoluteFile();
+    }
+
+    File dir = searchDir;
+    while (dir != null) {
+      System.err.println("  " + new File(dir, "eclipse-format.xml").getPath());
+      dir = dir.getParentFile();
     }
   }
 

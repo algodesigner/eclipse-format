@@ -83,6 +83,9 @@ eclipse-format -d src/
 # Verbose output
 eclipse-format -v MyClass.java
 
+# Auto-discover eclipse-format.xml (walks up from target)
+eclipse-format MyClass.java
+
 # Use custom configuration file
 eclipse-format -c my-formatter.xml MyClass.java
 ```
@@ -93,9 +96,10 @@ eclipse-format -c my-formatter.xml MyClass.java
 Usage: eclipse-format [-cdrv] [-c=<configFile>] <target>
       <target>            File or directory to format
   -c, --config=<configFile>
-                          Path to Eclipse formatter configuration file
-                          (defaults to eclipse-format.xml in the current
-                          directory; does not search parent directories)
+                          Path to Eclipse formatter configuration file.
+                          If not specified, searches for eclipse-format.xml
+                          starting from the target's parent directory and
+                          walking up the directory tree.
   -d, --dry-run           Show what would be formatted without making changes
   -r, --recursive         Format files recursively
   -v, --verbose           Verbose output
@@ -111,11 +115,16 @@ The tool uses Eclipse's XML formatter configuration files. You can:
 2. **Use the default** included in this project (`eclipse-format.xml`)
 3. **Create your own** XML configuration
 
-**Config file resolution:** The config file path is resolved relative to
-the **current working directory** from which you run the tool. There is
-no automatic discovery — the tool does not search parent directories,
-project roots, or `~/.config/`. Use the `-c` option to specify a full or
-relative path to a config file elsewhere.
+**Config file resolution:** When `-c` is not specified, the tool searches
+for `eclipse-format.xml` by walking up the directory tree. The search
+starts from the target's parent directory (for a file) or the target
+directory itself (for a directory), ascending towards the filesystem
+root. The first `eclipse-format.xml` found is used. Use `-c` to specify
+an exact path and bypass auto-discovery entirely.
+
+Place `eclipse-format.xml` in your project root and run the tool from
+any subdirectory — it will find it automatically. This matches the
+behaviour of tools like clang-format.
 
 Example configuration file structure:
 ```xml
@@ -194,7 +203,7 @@ eclipse-format/
 ### Example 1: Format a Project
 
 ```bash
-# Format all Java files in your project
+# Format all Java files (auto-discovers eclipse-format.xml in project root)
 eclipse-format -r src/main/java/
 
 # With custom configuration

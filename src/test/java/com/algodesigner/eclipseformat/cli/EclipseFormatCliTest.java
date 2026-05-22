@@ -117,4 +117,51 @@ class EclipseFormatCliTest {
       new picocli.CommandLine(new EclipseFormatCli()).execute(args);
     assertEquals(1, exitCode);
   }
+
+  @Test
+  void testAutoDiscoverInTargetDir() throws IOException {
+    Path configFile = tempDir.resolve("eclipse-format.xml");
+    Files.writeString(configFile,
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><profiles></profiles>");
+
+    Path javaFile = tempDir.resolve("Test.java");
+    Files.writeString(javaFile, "public class Test{}");
+
+    String[] args = { javaFile.toString() };
+    int exitCode =
+      new picocli.CommandLine(new EclipseFormatCli()).execute(args);
+    assertEquals(0, exitCode,
+      "Should auto-discover eclipse-format.xml in target directory");
+  }
+
+  @Test
+  void testAutoDiscoverWalksUp() throws IOException {
+    Path configFile = tempDir.resolve("eclipse-format.xml");
+    Files.writeString(configFile,
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><profiles></profiles>");
+
+    Path subDir = tempDir.resolve("sub/deep");
+    Files.createDirectories(subDir);
+
+    Path javaFile = subDir.resolve("Test.java");
+    Files.writeString(javaFile, "public class Test{}");
+
+    String[] args = { javaFile.toString() };
+    int exitCode =
+      new picocli.CommandLine(new EclipseFormatCli()).execute(args);
+    assertEquals(0, exitCode,
+      "Should auto-discover eclipse-format.xml by walking up");
+  }
+
+  @Test
+  void testAutoDiscoverNotFound() throws IOException {
+    Path javaFile = tempDir.resolve("Test.java");
+    Files.writeString(javaFile, "public class Test{}");
+
+    String[] args = { javaFile.toString() };
+    int exitCode =
+      new picocli.CommandLine(new EclipseFormatCli()).execute(args);
+    assertEquals(1, exitCode,
+      "Should exit with error when no eclipse-format.xml is found");
+  }
 }
