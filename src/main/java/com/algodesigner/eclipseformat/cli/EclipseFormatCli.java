@@ -46,7 +46,7 @@ public class EclipseFormatCli implements Callable<Integer> {
    * directory.
    */
   @Option(names = { "-c",
-    "--config" }, description = "Path to Eclipse formatter configuration file", defaultValue = "eclipse-format.xml")
+    "--config" }, description = "Path to Eclipse formatter configuration file (default: eclipse-format.xml in current directory)", defaultValue = "eclipse-format.xml")
   private File configFile;
 
   /**

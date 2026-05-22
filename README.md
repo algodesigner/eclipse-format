@@ -94,6 +94,8 @@ Usage: eclipse-format [-cdrv] [-c=<configFile>] <target>
       <target>            File or directory to format
   -c, --config=<configFile>
                           Path to Eclipse formatter configuration file
+                          (defaults to eclipse-format.xml in the current
+                          directory; does not search parent directories)
   -d, --dry-run           Show what would be formatted without making changes
   -r, --recursive         Format files recursively
   -v, --verbose           Verbose output
@@ -108,6 +110,12 @@ The tool uses Eclipse's XML formatter configuration files. You can:
 1. **Export from Eclipse IDE**: Window → Preferences → Java → Code Style → Formatter → Export...
 2. **Use the default** included in this project (`eclipse-format.xml`)
 3. **Create your own** XML configuration
+
+**Config file resolution:** The config file path is resolved relative to
+the **current working directory** from which you run the tool. There is
+no automatic discovery — the tool does not search parent directories,
+project roots, or `~/.config/`. Use the `-c` option to specify a full or
+relative path to a config file elsewhere.
 
 Example configuration file structure:
 ```xml
