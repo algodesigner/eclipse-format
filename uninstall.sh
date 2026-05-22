@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -e
-
-echo "🗑️  Eclipse Formatter CLI Uninstaller"
-echo "======================================"
+printf "\xF0\x9F\x97\x91\xEF\xB8\x8F  Eclipse Formatter CLI Uninstaller\n"
+printf "======================================\n"
 
 # Colours for output
 RED='\033[0;31m'
@@ -14,11 +12,11 @@ NC='\033[0m' # No Colour
 
 # Detect all installed files
 detect_installations() {
-    echo -e "${YELLOW}🔍 Detecting installed files...${NC}"
-    echo ""
-    
+    printf "${YELLOW}\xF0\x9F\x94\x8D Detecting installed files...${NC}\n"
+    printf "\n"
+
     local found_count=0
-    
+
     # Common installation locations
     local locations=(
         # System locations
@@ -26,199 +24,208 @@ detect_installations() {
         "/usr/local/bin/eclipse-format.jar"
         "/usr/bin/eclipse-format"
         "/usr/bin/eclipse-format.jar"
-        
+
         # User locations
         "$HOME/.local/bin/eclipse-format"
         "$HOME/.local/bin/eclipse-format.jar"
         "$HOME/bin/eclipse-format"
         "$HOME/bin/eclipse-format.jar"
-        
+
         # Project directory
-        "$(pwd)/eclipse-format"
-        "$(pwd)/eclipse-format.jar"
-        "$(pwd)/eclipse-format.sh"
-        "$(pwd)/eclipse-format.bat"
-        "$(pwd)/eclipse-format-simple.sh"
-        
+        "$(dirname "$0")/eclipse-format"
+        "$(dirname "$0")/eclipse-format.jar"
+        "$(dirname "$0")/eclipse-format.sh"
+        "$(dirname "$0")/eclipse-format.bat"
+        "$(dirname "$0")/eclipse-format-simple.sh"
+
         # Other common locations
         "/opt/eclipse-format/"
         "$HOME/Applications/eclipse-format"
     )
-    
+
     for location in "${locations[@]}"; do
         if [ -e "$location" ]; then
             found_count=$((found_count + 1))
             if [ -f "$location" ]; then
-                local size=$(du -h "$location" 2>/dev/null | cut -f1 || echo "?")
-                echo -e "${GREEN}✅ Found file: $location${NC} (Size: $size)"
+                local size
+                size=$(du -h "$location" 2>/dev/null | cut -f1) || size="?"
+                printf "${GREEN}\xE2\x9C\x85 Found file: $location${NC} (Size: $size)\n"
             elif [ -d "$location" ]; then
-                local item_count=$(find "$location" -type f 2>/dev/null | wc -l || echo "?")
-                echo -e "${BLUE}📁 Found directory: $location${NC} (Files: $item_count)"
+                local item_count
+                item_count=$(find "$location" -type f 2>/dev/null | wc -l) || item_count="?"
+                printf "${BLUE}\xF0\x9F\x93\x81 Found directory: $location${NC} (Files: $item_count)\n"
             fi
         fi
     done
-    
+
     if [ $found_count -eq 0 ]; then
-        echo -e "${YELLOW}⚠️  No Eclipse Formatter CLI installations detected${NC}"
+        printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  No Eclipse Formatter CLI installations detected${NC}\n"
     else
-        echo ""
-        echo -e "${GREEN}Found $found_count installation(s)${NC}"
+        printf "\n"
+        printf "${GREEN}Found $found_count installation(s)${NC}\n"
     fi
-    
+
     return $found_count
 }
 
 # Interactive uninstall
 interactive_uninstall() {
-    detect_installations
-    local found_count=$?
-    
-    if [ $found_count -eq 0 ]; then
-        exit 0
-    fi
-    
-    echo ""
-    echo "Uninstall Options:"
-    echo "  1) Remove system-wide installation (/usr/local/bin)"
-    echo "  2) Remove local user installation (~/.local/bin)"
-    echo "  3) Remove ALL detected installations"
-    echo "  4) Remove specific file or directory"
-    echo "  5) Cancel"
-    echo ""
-    
-    read -p "Choose option (1-5): " -n 1 -r
-    echo
-    
-    case $REPLY in
-        1)
-            remove_system
-            ;;
-        2)
-            remove_local
-            ;;
-        3)
-            remove_all
-            ;;
-        4)
-            remove_specific
-            ;;
-        5)
-            echo "Cancelled"
-            exit 0
-            ;;
-        *)
-            echo -e "${RED}❌ Invalid option${NC}"
-            exit 1
-            ;;
-    esac
+    while true; do
+        detect_installations
+        printf "\n"
+        printf "Uninstall Options:\n"
+        printf "  1) Remove system-wide installation (/usr/local/bin)\n"
+        printf "  2) Remove local user installation (~/.local/bin)\n"
+        printf "  3) Remove project files\n"
+        printf "  4) Remove ALL detected installations\n"
+        printf "  5) Remove specific file or directory\n"
+        printf "  6) Clean up PATH entries\n"
+        printf "  7) Exit\n"
+        printf "\n"
+        printf "Choose (1-7): "
+        read -r choice
+
+        case $choice in
+            1) remove_system ;;
+            2) remove_local ;;
+            3) remove_project ;;
+            4) remove_all ;;
+            5) remove_specific ;;
+            6) cleanup_path ;;
+            7) printf "Done\n"; exit 0 ;;
+            *) printf "${RED}Invalid option${NC}\n" ;;
+        esac
+    done
 }
 
 # Remove system-wide installation
 remove_system() {
-    echo -e "${YELLOW}🗑️  Removing system-wide installation...${NC}"
-    
+    printf "${YELLOW}\xF0\x9F\x97\x91\xEF\xB8\x8F  Removing system-wide installation...${NC}\n"
+
     local removed=0
     local need_sudo=false
-    
+
     # Check if we can write to /usr/local/bin
     if [ ! -w "/usr/local/bin" ] && [ "$(id -u)" -ne 0 ]; then
         need_sudo=true
     fi
-    
-    if [ -f "/usr/local/bin/eclipse-format" ]; then
-        echo "Removing: /usr/local/bin/eclipse-format"
-        if [ "$need_sudo" = true ]; then
-            sudo rm -f "/usr/local/bin/eclipse-format"
-        else
-            rm -f "/usr/local/bin/eclipse-format"
+
+    local system_files=(
+        "/usr/local/bin/eclipse-format"
+        "/usr/local/bin/eclipse-format.jar"
+        "/usr/bin/eclipse-format"
+        "/usr/bin/eclipse-format.jar"
+    )
+
+    for file in "${system_files[@]}"; do
+        if [ -f "$file" ]; then
+            printf "Removing: $file\n"
+            if [ "$need_sudo" = true ]; then
+                sudo rm -f "$file"
+            else
+                rm -f "$file"
+            fi
+            removed=$((removed + 1))
         fi
-        removed=$((removed + 1))
-    fi
-    
-    if [ -f "/usr/local/bin/eclipse-format.jar" ]; then
-        echo "Removing: /usr/local/bin/eclipse-format.jar"
-        if [ "$need_sudo" = true ]; then
-            sudo rm -f "/usr/local/bin/eclipse-format.jar"
-        else
-            rm -f "/usr/local/bin/eclipse-format.jar"
-        fi
-        removed=$((removed + 1))
-    fi
-    
+    done
+
     if [ $removed -eq 0 ]; then
-        echo -e "${YELLOW}⚠️  No system-wide installation found${NC}"
+        printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  No system-wide installation found${NC}\n"
     else
-        echo -e "${GREEN}✅ Removed $removed system file(s)${NC}"
+        printf "${GREEN}\xE2\x9C\x85 Removed $removed system file(s)${NC}\n"
     fi
 }
 
 # Remove local user installation
 remove_local() {
-    echo -e "${YELLOW}🗑️  Removing local user installation...${NC}"
-    
+    printf "${YELLOW}\xF0\x9F\x97\x91\xEF\xB8\x8F  Removing local user installation...${NC}\n"
+
     local removed=0
-    
-    # ~/.local/bin
-    if [ -f "$HOME/.local/bin/eclipse-format" ]; then
-        echo "Removing: $HOME/.local/bin/eclipse-format"
-        rm -f "$HOME/.local/bin/eclipse-format"
-        removed=$((removed + 1))
-    fi
-    
-    if [ -f "$HOME/.local/bin/eclipse-format.jar" ]; then
-        echo "Removing: $HOME/.local/bin/eclipse-format.jar"
-        rm -f "$HOME/.local/bin/eclipse-format.jar"
-        removed=$((removed + 1))
-    fi
-    
-    # ~/bin
-    if [ -f "$HOME/bin/eclipse-format" ]; then
-        echo "Removing: $HOME/bin/eclipse-format"
-        rm -f "$HOME/bin/eclipse-format"
-        removed=$((removed + 1))
-    fi
-    
-    if [ -f "$HOME/bin/eclipse-format.jar" ]; then
-        echo "Removing: $HOME/bin/eclipse-format.jar"
-        rm -f "$HOME/bin/eclipse-format.jar"
-        removed=$((removed + 1))
-    fi
-    
+
+    local local_files=(
+        "$HOME/.local/bin/eclipse-format"
+        "$HOME/.local/bin/eclipse-format.jar"
+        "$HOME/bin/eclipse-format"
+        "$HOME/bin/eclipse-format.jar"
+    )
+
+    for file in "${local_files[@]}"; do
+        if [ -f "$file" ]; then
+            printf "Removing: $file\n"
+            rm -f "$file"
+            removed=$((removed + 1))
+        fi
+    done
+
     if [ $removed -eq 0 ]; then
-        echo -e "${YELLOW}⚠️  No local user installation found${NC}"
+        printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  No local user installation found${NC}\n"
     else
-        echo -e "${GREEN}✅ Removed $removed local file(s)${NC}"
+        printf "${GREEN}\xE2\x9C\x85 Removed $removed local file(s)${NC}\n"
+    fi
+}
+
+# Remove project files
+remove_project() {
+    printf "${YELLOW}\xF0\x9F\x97\x91\xEF\xB8\x8F  Removing project files...${NC}\n"
+
+    local project_dir
+    project_dir="$(dirname "$0")"
+    local removed=0
+
+    local project_files=(
+        "$project_dir/eclipse-format"
+        "$project_dir/eclipse-format.jar"
+        "$project_dir/eclipse-format.sh"
+        "$project_dir/eclipse-format.bat"
+        "$project_dir/eclipse-format-simple.sh"
+    )
+
+    for file in "${project_files[@]}"; do
+        if [ -f "$file" ]; then
+            printf "Removing: $file\n"
+            rm -f "$file"
+            removed=$((removed + 1))
+        fi
+    done
+
+    if [ $removed -eq 0 ]; then
+        printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  No project files found${NC}\n"
+    else
+        printf "${GREEN}\xE2\x9C\x85 Removed $removed project file(s)${NC}\n"
     fi
 }
 
 # Remove all detected installations
 remove_all() {
-    echo -e "${YELLOW}🗑️  Removing ALL installations...${NC}"
-    echo ""
-    
+    printf "${YELLOW}\xF0\x9F\x97\x91\xEF\xB8\x8F  Removing ALL installations...${NC}\n"
+    printf "\n"
+
+    local project_dir
+    project_dir="$(dirname "$0")"
+
     # First pass: remove files we can remove without asking
     local auto_locations=(
         "$HOME/.local/bin/eclipse-format"
         "$HOME/.local/bin/eclipse-format.jar"
         "$HOME/bin/eclipse-format"
         "$HOME/bin/eclipse-format.jar"
-        "$(pwd)/eclipse-format"
-        "$(pwd)/eclipse-format.jar"
-        "$(pwd)/eclipse-format.sh"
-        "$(pwd)/eclipse-format.bat"
-        "$(pwd)/eclipse-format-simple.sh"
+        "$project_dir/eclipse-format"
+        "$project_dir/eclipse-format.jar"
+        "$project_dir/eclipse-format.sh"
+        "$project_dir/eclipse-format.bat"
+        "$project_dir/eclipse-format-simple.sh"
     )
-    
+
     for location in "${auto_locations[@]}"; do
         if [ -f "$location" ]; then
-            echo "Removing: $location"
+            printf "Removing: $location\n"
             rm -f "$location"
         fi
     done
-    
-    echo ""
-    echo -e "${YELLOW}System files (may require sudo):${NC}"
-    
+
+    printf "\n"
+    printf "${YELLOW}System files (may require sudo):${NC}\n"
+
     # System files that might need sudo
     local system_locations=(
         "/usr/local/bin/eclipse-format"
@@ -226,7 +233,7 @@ remove_all() {
         "/usr/bin/eclipse-format"
         "/usr/bin/eclipse-format.jar"
     )
-    
+
     local need_sudo=false
     for location in "${system_locations[@]}"; do
         if [ -f "$location" ]; then
@@ -236,108 +243,109 @@ remove_all() {
             break
         fi
     done
-    
+
     if [ "$need_sudo" = true ]; then
-        echo -e "${YELLOW}⚠️  Some system files require sudo permission${NC}"
-        read -p "Continue with sudo? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Skipping system files"
-        else
+        printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  Some system files require sudo permission${NC}\n"
+        printf "Continue with sudo? (y/N): "
+        read -r confirm
+        if printf "%s" "$confirm" | grep -iq "^y"; then
             for location in "${system_locations[@]}"; do
                 if [ -f "$location" ]; then
-                    echo "Removing: $location"
+                    printf "Removing: $location\n"
                     sudo rm -f "$location"
                 fi
             done
+        else
+            printf "Skipping system files\n"
         fi
     else
         for location in "${system_locations[@]}"; do
             if [ -f "$location" ]; then
-                echo "Removing: $location"
+                printf "Removing: $location\n"
                 rm -f "$location"
             fi
         done
     fi
-    
+
     # Check for directories
-    echo ""
-    echo -e "${YELLOW}Checking for directories...${NC}"
-    
+    printf "\n"
+    printf "${YELLOW}Checking for directories...${NC}\n"
+
     local dir_locations=(
         "/opt/eclipse-format/"
         "$HOME/Applications/eclipse-format"
     )
-    
+
     for location in "${dir_locations[@]}"; do
         if [ -d "$location" ]; then
-            echo -e "${YELLOW}Found directory: $location${NC}"
-            read -p "Remove this directory? (y/N): " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
+            printf "${YELLOW}Found directory: $location${NC}\n"
+            printf "Remove this directory? (y/N): "
+            read -r confirm
+            if printf "%s" "$confirm" | grep -iq "^y"; then
                 if [ ! -w "$location" ] && [ "$(id -u)" -ne 0 ]; then
-                    echo "Removing with sudo: $location"
+                    printf "Removing with sudo: $location\n"
                     sudo rm -rf "$location"
                 else
-                    echo "Removing: $location"
+                    printf "Removing: $location\n"
                     rm -rf "$location"
                 fi
             fi
         fi
     done
-    
-    echo -e "${GREEN}✅ Uninstall complete${NC}"
+
+    printf "${GREEN}\xE2\x9C\x85 Uninstall complete${NC}\n"
 }
 
 # Remove specific file or directory
 remove_specific() {
-    echo -e "${YELLOW}🗑️  Remove specific file or directory${NC}"
-    echo "Enter the full path to remove:"
-    echo "(e.g., /usr/local/bin/eclipse-format or ~/.local/bin/eclipse-format.jar)"
-    echo ""
-    
-    read -p "Path: " target_path
-    
+    printf "${YELLOW}\xF0\x9F\x97\x91\xEF\xB8\x8F  Remove specific file or directory${NC}\n"
+    printf "Enter the full path to remove:\n"
+    printf "(e.g., /usr/local/bin/eclipse-format or ~/.local/bin/eclipse-format.jar)\n"
+    printf "\n"
+
+    printf "Path: "
+    read -r target_path
+
     # Expand ~ to home directory
     target_path="${target_path/#\~/$HOME}"
-    
+
     if [ -z "$target_path" ]; then
-        echo -e "${RED}❌ No path specified${NC}"
-        exit 1
+        printf "${RED}\xE2\x9D\x8C No path specified${NC}\n"
+        return 1
     fi
-    
+
     if [ ! -e "$target_path" ]; then
-        echo -e "${RED}❌ Path does not exist: $target_path${NC}"
-        exit 1
+        printf "${RED}\xE2\x9D\x8C Path does not exist: $target_path${NC}\n"
+        return 1
     fi
-    
-    echo ""
-    echo -e "${YELLOW}Target: $target_path${NC}"
-    
+
+    printf "\n"
+    printf "${YELLOW}Target: $target_path${NC}\n"
+
     if [ -f "$target_path" ]; then
-        echo "Type: File"
+        printf "Type: File\n"
         ls -la "$target_path"
     elif [ -d "$target_path" ]; then
-        echo "Type: Directory"
+        printf "Type: Directory\n"
         ls -la "$target_path/" | head -10
-        echo "..."
+        printf "...\n"
     else
-        echo -e "${RED}❌ Not a file or directory${NC}"
-        exit 1
+        printf "${RED}\xE2\x9D\x8C Not a file or directory${NC}\n"
+        return 1
     fi
-    
-    echo ""
-    read -p "Are you sure you want to remove this? (y/N): " -n 1 -r
-    echo
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Cancelled"
-        exit 0
+
+    printf "\n"
+    printf "Are you sure you want to remove this? (y/N): "
+    read -r confirm
+
+    if ! printf "%s" "$confirm" | grep -iq "^y"; then
+        printf "Cancelled\n"
+        return 0
     fi
-    
+
     # Check permissions
     if [ ! -w "$(dirname "$target_path")" ] && [ "$(id -u)" -ne 0 ]; then
-        echo -e "${YELLOW}⚠️  Need sudo permission${NC}"
+        printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  Need sudo permission${NC}\n"
         if [ -f "$target_path" ]; then
             sudo rm -f "$target_path"
         elif [ -d "$target_path" ]; then
@@ -350,71 +358,71 @@ remove_specific() {
             rm -rf "$target_path"
         fi
     fi
-    
-    echo -e "${GREEN}✅ Removed: $target_path${NC}"
+
+    printf "${GREEN}\xE2\x9C\x85 Removed: $target_path${NC}\n"
 }
 
 # Clean up PATH entries
 cleanup_path() {
-    echo -e "${YELLOW}🔧 Optional: Clean up PATH entries${NC}"
-    echo "The installer may have added entries to your PATH."
-    echo "Would you like to remove them from your shell configuration?"
-    echo ""
-    echo "Shell configuration files checked:"
-    echo "  ~/.bashrc, ~/.bash_profile, ~/.zshrc, ~/.profile"
-    echo ""
-    
-    read -p "Clean up PATH entries? (y/N): " -n 1 -r
-    echo
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    printf "${YELLOW}\xF0\x9F\x94\xA7 Optional: Clean up PATH entries${NC}\n"
+    printf "The installer may have added entries to your PATH.\n"
+    printf "Would you like to remove them from your shell configuration?\n"
+    printf "\n"
+    printf "Shell configuration files checked:\n"
+    printf "  ~/.bashrc, ~/.bash_profile, ~/.zshrc, ~/.profile\n"
+    printf "\n"
+
+    printf "Clean up PATH entries? (y/N): "
+    read -r confirm
+
+    if ! printf "%s" "$confirm" | grep -iq "^y"; then
         return
     fi
-    
+
     local shell_files=(
         "$HOME/.bashrc"
         "$HOME/.bash_profile"
         "$HOME/.zshrc"
         "$HOME/.profile"
     )
-    
+
     local path_patterns=(
-        'export PATH="\$HOME/.local/bin:\$PATH"'
-        'export PATH=\$HOME/.local/bin:\$PATH'
-        'export PATH="\$HOME/bin:\$PATH"'
-        'export PATH=\$HOME/bin:\$PATH'
+        'export PATH="$HOME/.local/bin:$PATH"'
+        'export PATH=$HOME/.local/bin:$PATH'
+        'export PATH="$HOME/bin:$PATH"'
+        'export PATH=$HOME/bin:$PATH'
         '# Eclipse Formatter CLI'
     )
-    
+
     for file in "${shell_files[@]}"; do
         if [ -f "$file" ]; then
             local temp_file="${file}.tmp"
             local changed=false
-            
+
             # Create a backup
             cp "$file" "${file}.backup-$(date +%Y%m%d-%H%M%S)"
-            
+
             # Remove lines matching our patterns
             grep -v -F -f <(printf "%s\n" "${path_patterns[@]}") "$file" > "$temp_file" || true
-            
+
             if ! cmp -s "$file" "$temp_file"; then
                 mv "$temp_file" "$file"
-                echo "Cleaned: $file"
+                printf "Cleaned: $file\n"
                 changed=true
             else
                 rm -f "$temp_file"
             fi
-            
+
             if [ "$changed" = true ]; then
-                echo -e "${GREEN}✅ Updated $file${NC}"
-                echo "Backup created: ${file}.backup-*"
+                printf "${GREEN}\xE2\x9C\x85 Updated $file${NC}\n"
+                printf "Backup created: ${file}.backup-*\n"
             fi
         fi
     done
-    
-    echo ""
-    echo -e "${YELLOW}⚠️  Changes will take effect after restarting your shell${NC}"
-    echo "Or run: source ~/.bashrc (or your shell config file)"
+
+    printf "\n"
+    printf "${YELLOW}\xE2\x9A\xA0\xEF\xB8\x8F  Changes will take effect after restarting your shell${NC}\n"
+    printf "Or run: source ~/.bashrc (or your shell config file)\n"
 }
 
 # Show help
@@ -452,10 +460,9 @@ main() {
     # Parse command line arguments
     if [ $# -eq 0 ]; then
         interactive_uninstall
-        cleanup_path
         exit 0
     fi
-    
+
     case "$1" in
         --help|-h)
             show_help
@@ -472,7 +479,7 @@ main() {
             ;;
         --specific)
             if [ -z "$2" ]; then
-                echo -e "${RED}❌ --specific requires a path argument${NC}"
+                printf "${RED}\xE2\x9D\x8C --specific requires a path argument${NC}\n"
                 exit 1
             fi
             target_path="$2"
@@ -483,17 +490,16 @@ main() {
             ;;
         --interactive)
             interactive_uninstall
-            cleanup_path
             ;;
         *)
-            echo -e "${RED}❌ Unknown option: $1${NC}"
+            printf "${RED}\xE2\x9D\x8C Unknown option: $1${NC}\n"
             show_help
             exit 1
             ;;
     esac
-    
-    echo ""
-    echo -e "${GREEN}🎉 Uninstall complete!${NC}"
+
+    printf "\n"
+    printf "${GREEN}\xF0\x9F\x8E\x89 Uninstall complete!${NC}\n"
 }
 
 # Run main function
